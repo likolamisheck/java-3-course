@@ -1,39 +1,59 @@
 package com.taskmanager.taskapp.service;
 
 import com.taskmanager.taskapp.model.Task;
+import com.taskmanager.taskapp.repository.TaskRepository;
 import com.taskmanager.taskapp.service.impl.TaskServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.util.List;
 
 public class TaskServiceTest {
 
+    private TaskRepository taskRepository;
     private TaskService taskService;
 
     @BeforeEach
     public void setup() {
-        taskService = new TaskServiceImpl();
+        taskRepository = mock(TaskRepository.class);
+        taskService = new TaskServiceImpl(taskRepository);
     }
 
     @Test
     public void testAddTask() {
-        Task task = new Task(null, 1L, "Test task", null, LocalDateTime.now().plusDays(1));
+        Task task = new Task();
+        task.setUserId(1L);
+        task.setDescription("Test task");
+        task.setTargetDate(LocalDateTime.now().plusDays(1));
+
+        when(taskRepository.save(task)).thenReturn(task);
+
         Task created = taskService.addTask(task);
 
-        assertNotNull(created.getId());
+        verify(taskRepository).save(task);
         assertEquals("Test task", created.getDescription());
         assertEquals(1L, created.getUserId());
     }
 
     @Test
     public void testGetAllUserTasks() {
-        taskService.addTask(new Task(null, 1L, "T1", null, LocalDateTime.now()));
-        taskService.addTask(new Task(null, 1L, "T2", null, LocalDateTime.now()));
-        taskService.addTask(new Task(null, 2L, "Other user", null, LocalDateTime.now()));
+        Task t1 = new Task();
+        t1.setUserId(1L);
+        t1.setDescription("T1");
+
+        Task t2 = new Task();
+        t2.setUserId(1L);
+        t2.setDescription("T2");
+
+        when(taskRepository.findByUserIdAndDeletedFalse(1L)).thenReturn(Arrays.asList(t1, t2));
 
         List<Task> tasks = taskService.getAllUserTasks(1L);
         assertEquals(2, tasks.size());
@@ -41,24 +61,31 @@ public class TaskServiceTest {
 
     @Test
     public void testGetPendingTasks() {
-        Task task1 = new Task(null, 1L, "Active", null, LocalDateTime.now());
-        Task task2 = new Task(null, 1L, "Completed", null, LocalDateTime.now());
-        task2.setCompleted(true);
+        Task pending = new Task();
+        pending.setUserId(1L);
+        pending.setCompleted(false);
+        pending.setDescription("Active");
 
-        taskService.addTask(task1);
-        taskService.addTask(task2);
+        when(taskRepository.findByUserIdAndCompletedFalseAndDeletedFalse(1L))
+                .thenReturn(Collections.singletonList(pending));
 
-        List<Task> pending = taskService.getPendingTasks(1L);
-        assertEquals(1, pending.size());
-        assertEquals("Active", pending.get(0).getDescription());
+        List<Task> result = taskService.getPendingTasks(1L);
+        assertEquals(1, result.size());
+        assertEquals("Active", result.get(0).getDescription());
     }
 
     @Test
     public void testDeleteTask() {
-        Task task = taskService.addTask(new Task(null, 1L, "To delete", null, LocalDateTime.now()));
-        taskService.deleteTask(task.getId());
+        Task task = new Task();
+        task.setId(100L);
+        task.setUserId(1L);
+        task.setDeleted(false);
 
-        List<Task> remaining = taskService.getAllUserTasks(1L);
-        assertEquals(0, remaining.size());
+        when(taskRepository.findById(100L)).thenReturn(Optional.of(task));
+
+        taskService.deleteTask(100L);
+
+        assertTrue(task.isDeleted());
+        verify(taskRepository).save(task);
     }
 }

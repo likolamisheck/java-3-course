@@ -1,46 +1,41 @@
 package com.taskmanager.taskapp.service.impl;
 
 import com.taskmanager.taskapp.model.Task;
+import com.taskmanager.taskapp.repository.TaskRepository;
 import com.taskmanager.taskapp.service.TaskService;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 public class TaskServiceImpl implements TaskService {
 
-    private final Map<Long, Task> tasks = new HashMap<>();
-    private final AtomicLong taskIdGenerator = new AtomicLong();
+    private final TaskRepository taskRepository;
+
+    public TaskServiceImpl(TaskRepository taskRepository) {
+        this.taskRepository = taskRepository;
+    }
 
     @Override
     public Task addTask(Task task) {
-        task.setId(taskIdGenerator.incrementAndGet());
-        task.setCreatedAt(java.time.LocalDateTime.now());
-        tasks.put(task.getId(), task);
-        return task;
+        return taskRepository.save(task);
     }
 
     @Override
     public List<Task> getAllUserTasks(Long userId) {
-        return tasks.values().stream()
-                .filter(t -> t.getUserId().equals(userId) && !t.isDeleted())
-                .collect(Collectors.toList());
+        return taskRepository.findByUserIdAndDeletedFalse(userId);
     }
 
     @Override
     public List<Task> getPendingTasks(Long userId) {
-        return tasks.values().stream()
-                .filter(t -> t.getUserId().equals(userId) && !t.isCompleted() && !t.isDeleted())
-                .collect(Collectors.toList());
+        return taskRepository.findByUserIdAndCompletedFalseAndDeletedFalse(userId);
     }
 
     @Override
     public void deleteTask(Long taskId) {
-        Task task = tasks.get(taskId);
-        if (task != null) {
+        taskRepository.findById(taskId).ifPresent(task -> {
             task.setDeleted(true);
-        }
+            taskRepository.save(task);
+        });
     }
 }
