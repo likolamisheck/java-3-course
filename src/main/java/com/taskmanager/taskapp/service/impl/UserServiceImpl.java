@@ -1,29 +1,29 @@
 package com.taskmanager.taskapp.service.impl;
 
 import com.taskmanager.taskapp.model.User;
+import com.taskmanager.taskapp.repository.UserRepository;
 import com.taskmanager.taskapp.service.UserService;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
 
-    private final Map<String, User> users = new HashMap<>();
-    private final AtomicLong userIdGenerator = new AtomicLong();
+    private final UserRepository userRepository;
+
+    public UserServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public User register(User user) {
-        user.setId(userIdGenerator.incrementAndGet());
-        users.put(user.getUsername(), user);
-        return user;
+        return userRepository.save(user);
     }
 
     @Override
     public User login(String username, String password) {
-        User user = users.get(username);
-        return (user != null && user.getPassword().equals(password)) ? user : null;
+        Optional<User> user = userRepository.findByUsername(username);
+        return user.filter(u -> u.getPassword().equals(password)).orElse(null);
     }
 }
