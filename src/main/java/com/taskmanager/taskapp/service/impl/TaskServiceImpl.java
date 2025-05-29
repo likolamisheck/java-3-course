@@ -5,6 +5,8 @@ import com.taskmanager.taskapp.model.Task;
 import com.taskmanager.taskapp.repository.TaskRepository;
 import com.taskmanager.taskapp.service.TaskService;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -24,10 +26,11 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @CacheEvict(value = {"allTasks", "pendingTasks"}, key = "#task.userId")
     public Task addTask(Task task) {
         Task savedTask = taskRepository.save(task);
 
-        // ✅ Send full Task object to RabbitMQ
+        // ✅ Send task message to RabbitMQ
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.TASK_EXCHANGE,
                 RabbitMQConfig.TASK_ROUTING_KEY,
@@ -38,11 +41,13 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Cacheable(value = "allTasks", key = "#userId")
     public List<Task> getAllUserTasks(Long userId) {
         return taskRepository.findByUserIdAndDeletedFalse(userId);
     }
 
     @Override
+    @Cacheable(value = "pendingTasks", key = "#userId")
     public List<Task> getPendingTasks(Long userId) {
         return taskRepository.findByUserIdAndCompletedFalseAndDeletedFalse(userId);
     }
@@ -52,6 +57,7 @@ public class TaskServiceImpl implements TaskService {
         taskRepository.findById(taskId).ifPresent(task -> {
             task.setDeleted(true);
             taskRepository.save(task);
+            evictUserTaskCache(task.getUserId());
         });
     }
 
@@ -64,7 +70,12 @@ public class TaskServiceImpl implements TaskService {
 
         for (Task task : overdueTasks) {
             System.out.println("⚠️ Overdue task detected: " + task.getTitle());
-            // You could enhance this to send notifications
         }
+    }
+
+    @Override
+    @CacheEvict(value = {"allTasks", "pendingTasks"}, key = "#userId")
+    public void evictUserTaskCache(Long userId) {
+        // This method triggers cache eviction manually
     }
 }

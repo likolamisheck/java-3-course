@@ -10,6 +10,7 @@ public interface TaskService {
     List<Task> getPendingTasks(Long userId);
     void deleteTask(Long taskId);
 
-    // New method for scheduled async processing
-    void processOverdueTasks();
+    void processOverdueTasks(); // Step 8
+
+    void evictUserTaskCache(Long userId); // Needed for @Override to compile
 }
