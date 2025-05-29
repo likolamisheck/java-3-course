@@ -9,4 +9,7 @@ public interface TaskService {
     List<Task> getAllUserTasks(Long userId);
     List<Task> getPendingTasks(Long userId);
     void deleteTask(Long taskId);
+
+    // New method for scheduled async processing
+    void processOverdueTasks();
 }
