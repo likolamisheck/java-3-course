@@ -1,7 +1,6 @@
 package com.taskmanager.taskapp.service;
 
 import com.taskmanager.taskapp.model.Task;
-
 import java.util.List;
 
 public interface TaskService {
