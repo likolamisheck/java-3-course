@@ -59,4 +59,14 @@ public class Task {
 
     public boolean isDeleted() { return deleted; }
     public void setDeleted(boolean deleted) { this.deleted = deleted; }
+
+    // Add "title" alias methods for testing convenience
+    public void setTitle(String title) {
+        this.description = title;
+    }
+
+    public String getTitle() {
+        return this.description;
+    }
 }
+
