@@ -1,8 +1,10 @@
 package com.taskmanager.taskapp.service.impl;
 
+import com.taskmanager.taskapp.config.RabbitMQConfig;
 import com.taskmanager.taskapp.model.Task;
 import com.taskmanager.taskapp.repository.TaskRepository;
 import com.taskmanager.taskapp.service.TaskService;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,14 +13,25 @@ import java.util.List;
 public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
+    private final RabbitTemplate rabbitTemplate;
 
-    public TaskServiceImpl(TaskRepository taskRepository) {
+    public TaskServiceImpl(TaskRepository taskRepository, RabbitTemplate rabbitTemplate) {
         this.taskRepository = taskRepository;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     @Override
     public Task addTask(Task task) {
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+
+        // ✅ Send full Task object to RabbitMQ
+        rabbitTemplate.convertAndSend(
+                RabbitMQConfig.TASK_EXCHANGE,
+                RabbitMQConfig.TASK_ROUTING_KEY,
+                savedTask
+        );
+
+        return savedTask;
     }
 
     @Override

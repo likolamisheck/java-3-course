@@ -41,11 +41,23 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Flyway for DB migrations (compatible with PostgreSQL 13) -->
+        <!-- Flyway for DB migrations -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
             <version>9.22.3</version>
+        </dependency>
+
+        <!-- Redis Cache (already from Step 6) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- RabbitMQ for Messaging -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
         <!-- Devtools -->
