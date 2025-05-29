@@ -1,11 +1,14 @@
 package com.taskmanager.taskapp.model;
 
 import jakarta.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "tasks")
-public class Task {
+public class Task implements Serializable {
+
+    private static final long serialVersionUID = 1L; // Required for Serializable
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -60,7 +63,7 @@ public class Task {
     public boolean isDeleted() { return deleted; }
     public void setDeleted(boolean deleted) { this.deleted = deleted; }
 
-    // Add "title" alias methods for testing convenience
+    // Title alias (for compatibility with test cases or legacy code)
     public void setTitle(String title) {
         this.description = title;
     }
@@ -69,4 +72,3 @@ public class Task {
         return this.description;
     }
 }
-

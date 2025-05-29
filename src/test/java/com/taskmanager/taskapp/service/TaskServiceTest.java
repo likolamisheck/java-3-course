@@ -5,26 +5,28 @@ import com.taskmanager.taskapp.repository.TaskRepository;
 import com.taskmanager.taskapp.service.impl.TaskServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import java.util.List;
-
 public class TaskServiceTest {
 
     private TaskRepository taskRepository;
+    private RabbitTemplate rabbitTemplate;
     private TaskService taskService;
 
     @BeforeEach
     public void setup() {
         taskRepository = mock(TaskRepository.class);
-        taskService = new TaskServiceImpl(taskRepository);
+        rabbitTemplate = mock(RabbitTemplate.class);
+        taskService = new TaskServiceImpl(taskRepository, rabbitTemplate);
     }
 
     @Test
@@ -39,6 +41,11 @@ public class TaskServiceTest {
         Task created = taskService.addTask(task);
 
         verify(taskRepository).save(task);
+        verify(rabbitTemplate).convertAndSend(
+            any(String.class),
+            any(String.class),
+            any(Object.class)
+        );
         assertEquals("Test task", created.getDescription());
         assertEquals(1L, created.getUserId());
     }
